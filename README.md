@@ -17,11 +17,12 @@
 1. [給完全新手的說明](#給完全新手的說明)
 2. [專案架構圖解](#專案架構圖解)
 3. [如何啟動專案](#如何啟動專案)
-4. [三層式架構詳解](#三層式架構詳解)
-5. [程式碼逐行解說](#程式碼逐行解說)
-6. [API 使用教學](#api-使用教學)
-7. [單元測試教學](#單元測試教學)
-8. [常見問題 FAQ](#常見問題-faq)
+4. [Swagger API 文件](#swagger-api-文件)
+5. [三層式架構詳解](#三層式架構詳解)
+6. [程式碼逐行解說](#程式碼逐行解說)
+7. [API 使用教學](#api-使用教學)
+8. [單元測試教學](#單元測試教學)
+9. [常見問題 FAQ](#常見問題-faq)
 
 ---
 
@@ -96,6 +97,7 @@
 spring-petclinic-customers-service/
 │
 ├── pom.xml                          ← 專案設定檔（像是食譜的材料清單）
+├── mvnw / mvnw.cmd                  ← Maven Wrapper（不需安裝 Maven）
 │
 ├── src/main/java/.../customers/
 │   │
@@ -113,7 +115,7 @@ spring-petclinic-customers-service/
 │   │   └── OwnerService.java
 │   │
 │   ├── web/                         ← 【網頁層】處理 HTTP 請求
-│   │   ├── OwnerController.java     ← API 入口點
+│   │   ├── OwnerController.java     ← API 入口點（含 OpenAPI 註解）
 │   │   ├── GlobalExceptionHandler.java  ← 錯誤處理
 │   │   ├── dto/                     ← 資料傳輸物件
 │   │   │   ├── OwnerDTO.java
@@ -122,18 +124,20 @@ spring-petclinic-customers-service/
 │   │       ├── OwnerMapper.java
 │   │       └── PetMapper.java
 │   │
+│   ├── config/                      ← 【設定類別】
+│   │   └── OpenApiConfig.java       ← Swagger/OpenAPI 設定
+│   │
 │   ├── exception/                   ← 【例外處理】定義錯誤類型
 │   │   ├── ResourceNotFoundException.java
 │   │   ├── BusinessRuleException.java
 │   │   ├── DuplicateResourceException.java
 │   │   └── ErrorResponse.java
 │   │
+│   ├── DataInitializer.java         ← 初始資料載入器
 │   └── CustomersServiceApplication.java  ← 程式的起點
 │
 ├── src/main/resources/
-│   ├── application.yml              ← 應用程式設定
-│   ├── bootstrap.yml                ← 啟動設定
-│   └── data.sql                     ← 初始資料
+│   └── application.yml              ← 應用程式設定（含詳細中文註解）
 │
 └── src/test/java/.../customers/     ← 【測試程式】
     ├── repository/OwnerRepositoryTest.java
@@ -151,9 +155,9 @@ spring-petclinic-customers-service/
    - 到 [Adoptium](https://adoptium.net/) 下載
    - 安裝後，打開終端機輸入 `java -version` 確認
 
-2. **安裝 Maven**
-   - 到 [Maven 官網](https://maven.apache.org/download.cgi) 下載
-   - 或者用 IDE（如 IntelliJ IDEA）內建的 Maven
+2. **Maven（可選）**
+   - 本專案包含 Maven Wrapper（`mvnw`），不需要另外安裝 Maven
+   - 如果想安裝，到 [Maven 官網](https://maven.apache.org/download.cgi) 下載
 
 ### 啟動步驟
 
@@ -161,11 +165,13 @@ spring-petclinic-customers-service/
 # 1. 進入專案資料夾
 cd spring-petclinic-customers-service
 
-# 2. 編譯專案
-mvn clean compile
+# 2. 編譯專案（使用 Maven Wrapper）
+./mvnw clean compile        # Linux/Mac
+mvnw.cmd clean compile      # Windows
 
 # 3. 啟動服務
-mvn spring-boot:run
+./mvnw spring-boot:run      # Linux/Mac
+mvnw.cmd spring-boot:run    # Windows
 ```
 
 看到這行訊息就代表成功了：
@@ -182,6 +188,12 @@ http://localhost:8081/api/owners
 
 如果看到 JSON 格式的資料，恭喜你成功了！
 
+**更方便的方式：使用 Swagger UI**
+```
+http://localhost:8081/swagger-ui.html
+```
+這會開啟一個互動式的 API 測試介面！
+
 ### 查看資料庫
 
 這個專案使用 H2 資料庫，你可以透過網頁介面查看：
@@ -191,6 +203,71 @@ http://localhost:8081/api/owners
 3. 使用者名稱：`sa`
 4. 密碼：（留空）
 5. 點擊 Connect
+
+---
+
+## Swagger API 文件
+
+### 什麼是 Swagger？
+
+Swagger 是一套 API 文件工具，可以：
+1. **自動產生文件**：從程式碼註解自動產生 API 文件
+2. **互動式測試**：直接在網頁上測試 API，不需要用 curl
+3. **標準格式**：產生 OpenAPI 3.0 規範的文件
+
+### 存取方式
+
+啟動服務後，打開瀏覽器：
+
+| 網址 | 說明 |
+|------|------|
+| http://localhost:8081/swagger-ui.html | Swagger UI 互動介面 |
+| http://localhost:8081/v3/api-docs | OpenAPI JSON 格式 |
+| http://localhost:8081/v3/api-docs.yaml | OpenAPI YAML 格式 |
+
+### Swagger UI 使用教學
+
+1. **開啟 Swagger UI**：http://localhost:8081/swagger-ui.html
+
+2. **查看 API 列表**：所有 API 會依照分類（Tag）顯示
+
+3. **測試 API**：
+   - 點擊想測試的 API（如 `GET /api/owners`）
+   - 點擊 **Try it out** 按鈕
+   - 填入參數（如果需要）
+   - 點擊 **Execute** 執行
+   - 查看回應結果
+
+### API 分類
+
+| 分類 | 說明 |
+|------|------|
+| 飼主管理 | 飼主的 CRUD 操作（新增、查詢、更新、刪除） |
+
+### OpenAPI 註解說明
+
+在 Controller 中使用的 OpenAPI 註解：
+
+```java
+@Tag(name = "飼主管理", description = "飼主的 CRUD 操作 API")
+public class OwnerController {
+
+    @Operation(summary = "查詢所有飼主", description = "取得所有飼主列表")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "查詢成功"),
+        @ApiResponse(responseCode = "404", description = "找不到資料")
+    })
+    @GetMapping
+    public List<OwnerDTO> findAll() { ... }
+}
+```
+
+| 註解 | 用途 |
+|------|------|
+| `@Tag` | API 分類標籤 |
+| `@Operation` | 描述單一 API 端點 |
+| `@ApiResponses` | 定義可能的回應狀態碼 |
+| `@Parameter` | 描述參數 |
 
 ---
 
@@ -690,6 +767,16 @@ public class OwnerService {
 
 ## API 使用教學
 
+### 測試方式
+
+有兩種方式可以測試 API：
+
+1. **Swagger UI（推薦）**：打開 http://localhost:8081/swagger-ui.html
+   - 圖形化介面，操作直覺
+   - 可以直接看到參數說明和回應格式
+
+2. **curl 指令**：適合自動化測試或 CLI 使用者
+
 ### 使用 curl 測試（終端機）
 
 ```bash
@@ -925,14 +1012,15 @@ class OwnerControllerIntegrationTest {
 ### 執行測試
 
 ```bash
-# 執行所有測試
-mvn test
+# 執行所有測試（使用 Maven Wrapper）
+./mvnw test              # Linux/Mac
+mvnw.cmd test            # Windows
 
 # 執行特定測試類別
-mvn test -Dtest=OwnerServiceTest
+./mvnw test -Dtest=OwnerServiceTest
 
 # 執行特定測試方法
-mvn test -Dtest=OwnerServiceTest#testAddPet_DuplicateName
+./mvnw test -Dtest=OwnerServiceTest#testAddPet_DuplicateName
 ```
 
 ---
@@ -1071,6 +1159,31 @@ List<String> names = pets.stream()
 
 ---
 
+## 專案功能總覽
+
+這個專案包含以下功能：
+
+| 功能 | 說明 |
+|------|------|
+| REST API | 飼主與寵物的 CRUD 操作 |
+| 資料驗證 | 使用 Bean Validation 驗證輸入 |
+| 例外處理 | 全域例外處理，統一錯誤回應格式 |
+| API 文件 | Swagger UI 互動式文件 |
+| 快取 | 使用 Spring Cache 快取查詢結果 |
+| 單元測試 | Repository、Service、Controller 測試 |
+
+### 技術棧
+
+- Java 17
+- Spring Boot 3.2.0
+- Spring Data JPA
+- H2 Database（開發環境）
+- Lombok
+- SpringDoc OpenAPI（Swagger）
+- JUnit 5 + Mockito
+
+---
+
 ## 結語
 
 恭喜你看完這份教學！
@@ -1081,7 +1194,8 @@ List<String> names = pets.stream()
 3. **業務邏輯放在 Service，不要放在 Controller**
 4. **用 DTO 傳輸資料，不要直接傳 Entity**
 5. **寫測試！沒寫測試的程式碼就像開車不繫安全帶**
+6. **用 Swagger 產生 API 文件，前後端協作更順暢**
 
 最重要的是：**能用簡單的方式解決問題，就不要用複雜的方式**。
 
-Happy Coding! 🎉
+Happy Coding!
