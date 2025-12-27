@@ -1,40 +1,148 @@
+# =============================================================================
+# Spring Boot 應用程式設定檔
+# =============================================================================
+#
+# 什麼是 application.yml？
+#
+# 這是 Spring Boot 的設定檔，用於設定應用程式的各種參數。
+# Spring Boot 支援兩種格式：
+# - application.properties（傳統格式，使用 key=value）
+# - application.yml（YAML 格式，更易讀，支援階層結構）
+#
+# YAML 語法基礎：
+# - 使用縮排表示階層關係（必須用空格，不能用 Tab）
+# - 冒號後面要有空格
+# - 同層級項目對齊
+#
+# 設定檔優先順序（由低到高）：
+# 1. 預設值（Spring Boot 內建）
+# 2. application.yml
+# 3. application-{profile}.yml（如 application-dev.yml）
+# 4. 命令列參數（如 --server.port=8080）
+# 5. 環境變數
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 伺服器設定
+# -----------------------------------------------------------------------------
 server:
+  # 應用程式監聽的 HTTP 埠號
+  # 預設是 8080，這裡改為 8081 避免與其他服務衝突
+  # 存取方式：http://localhost:8081
   port: 8081
 
+# -----------------------------------------------------------------------------
+# Spring 框架設定
+# -----------------------------------------------------------------------------
 spring:
+  # 應用程式名稱
+  # 用於識別服務，在微服務架構中很重要
+  # 會顯示在日誌和監控系統中
   application:
     name: customers-service
 
+  # ---------------------------------------------------------------------------
+  # 資料庫連線設定
+  # ---------------------------------------------------------------------------
   datasource:
+    # JDBC 連線字串
+    # jdbc:h2:mem:petclinic - 使用 H2 記憶體資料庫
+    # DB_CLOSE_DELAY=-1 - 保持資料庫連線，即使沒有活動連線
+    # DB_CLOSE_ON_EXIT=FALSE - 應用程式結束時不關閉資料庫
     url: jdbc:h2:mem:petclinic;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+
+    # 資料庫帳號（H2 預設帳號是 sa）
     username: sa
+
+    # 資料庫密碼（H2 預設密碼為空）
     password:
+
+    # JDBC 驅動程式類別
+    # Spring Boot 通常可以自動偵測，這裡明確指定
     driver-class-name: org.h2.Driver
 
+  # ---------------------------------------------------------------------------
+  # H2 資料庫控制台
+  # ---------------------------------------------------------------------------
+  # H2 是一個輕量級的 Java 資料庫，適合開發和測試
+  # 提供 Web 介面來瀏覽資料庫內容
   h2:
     console:
+      # 啟用 H2 Web 控制台
       enabled: true
+
+      # 控制台存取路徑
+      # 瀏覽器開啟：http://localhost:8081/h2-console
+      # JDBC URL 輸入：jdbc:h2:mem:petclinic
       path: /h2-console
 
+  # ---------------------------------------------------------------------------
+  # JPA / Hibernate 設定
+  # ---------------------------------------------------------------------------
+  # JPA（Java Persistence API）是 Java 的 ORM 標準
+  # Hibernate 是 JPA 的實作之一
   jpa:
+    # 指定資料庫方言
+    # 方言讓 Hibernate 知道如何產生特定資料庫的 SQL
     database-platform: org.hibernate.dialect.H2Dialect
+
     hibernate:
+      # DDL（Data Definition Language）自動生成策略
+      # 選項：
+      # - none: 不做任何事
+      # - validate: 驗證 Entity 與資料表結構是否一致
+      # - update: 自動更新資料表結構（不會刪除欄位）
+      # - create: 每次啟動都重新建立資料表
+      # - create-drop: 啟動時建立，關閉時刪除（適合測試）
       ddl-auto: create-drop
+
+    # 在控制台顯示 SQL 語句（開發時很有用）
     show-sql: true
+
+    # 延遲資料來源初始化
+    # 確保 Hibernate 先建立資料表，再執行 data.sql
     defer-datasource-initialization: true
+
     properties:
       hibernate:
+        # 格式化 SQL 輸出，更易閱讀
         format_sql: true
 
+  # ---------------------------------------------------------------------------
+  # SQL 初始化設定
+  # ---------------------------------------------------------------------------
   sql:
     init:
+      # SQL 初始化模式
+      # - always: 總是執行 data.sql
+      # - embedded: 只對嵌入式資料庫執行
+      # - never: 不執行
+      # 設為 never，改用 DataInitializer 程式碼初始化
       mode: never
 
+  # ---------------------------------------------------------------------------
+  # 快取設定
+  # ---------------------------------------------------------------------------
   cache:
+    # 快取類型
+    # - simple: 使用 ConcurrentHashMap（適合開發）
+    # - redis: 使用 Redis（適合生產環境）
+    # - caffeine: 使用 Caffeine 高效能快取
     type: simple
 
+# -----------------------------------------------------------------------------
+# 日誌設定
+# -----------------------------------------------------------------------------
+# 日誌等級（由低到高）：TRACE < DEBUG < INFO < WARN < ERROR
+# 設定某等級後，該等級及以上的日誌才會輸出
 logging:
   level:
+    # 我們的應用程式使用 DEBUG 等級，方便除錯
     org.springframework.samples.petclinic: DEBUG
+
+    # 顯示 Hibernate 執行的 SQL 語句
     org.hibernate.SQL: DEBUG
+
+    # 顯示 SQL 參數綁定的值
+    # TRACE 等級會顯示 ? 佔位符實際綁定的值
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE

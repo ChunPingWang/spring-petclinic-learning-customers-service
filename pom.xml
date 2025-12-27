@@ -1,52 +1,198 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+=============================================================================
+Maven 專案設定檔 (Project Object Model)
+=============================================================================
+
+什麼是 Maven？
+
+Maven 是 Java 專案的建構工具，負責：
+1. 管理依賴套件（自動下載需要的函式庫）
+2. 編譯程式碼
+3. 執行測試
+4. 打包應用程式（JAR、WAR）
+5. 部署應用程式
+
+什麼是 pom.xml？
+
+POM 是 Project Object Model 的縮寫，是 Maven 專案的核心設定檔。
+它定義了專案的基本資訊、依賴套件、建構方式等。
+
+Maven 常用指令：
+- mvn clean: 清除編譯產生的檔案
+- mvn compile: 編譯程式碼
+- mvn test: 執行測試
+- mvn package: 打包成 JAR/WAR
+- mvn spring-boot:run: 執行 Spring Boot 應用程式
+- mvn install: 安裝到本地 Maven 儲存庫
+
+依賴管理的好處：
+- 不需要手動下載 JAR 檔
+- 自動處理依賴的依賴（傳遞依賴）
+- 版本衝突自動解決
+- 容易升級版本
+=============================================================================
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!-- POM 模型版本，固定是 4.0.0 -->
     <modelVersion>4.0.0</modelVersion>
 
+    <!--
+    ==========================================================================
+    父專案設定 (Parent Project)
+    ==========================================================================
+
+    spring-boot-starter-parent 是 Spring Boot 提供的父 POM，包含：
+    - 常用依賴的版本管理（不需要自己指定版本）
+    - 編譯設定（Java 版本、編碼等）
+    - 資源過濾設定
+    - 插件設定
+
+    使用父專案的好處：
+    - 簡化設定，減少樣板程式碼
+    - 確保依賴版本相容
+    - 跟隨 Spring Boot 版本升級自動更新依賴
+    -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.0</version>
+        <!-- 不查找父 POM 的相對路徑 -->
         <relativePath/>
     </parent>
 
+    <!--
+    ==========================================================================
+    專案座標 (Project Coordinates)
+    ==========================================================================
+
+    Maven 使用座標來唯一識別一個專案：
+    - groupId: 組織或公司的識別碼（通常是反向網域名稱）
+    - artifactId: 專案名稱
+    - version: 版本號
+
+    SNAPSHOT 版本：
+    - SNAPSHOT 表示開發中的版本
+    - 每次建構可能產生不同的結果
+    - 正式發布時應移除 SNAPSHOT
+    -->
     <groupId>org.springframework.samples</groupId>
     <artifactId>spring-petclinic-customers-service</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>Spring PetClinic Customers Service</name>
     <description>Customers Service for Spring PetClinic</description>
 
+    <!--
+    ==========================================================================
+    專案屬性 (Properties)
+    ==========================================================================
+
+    定義可重用的變數，在 POM 中用 ${propertyName} 引用。
+    常見用途：定義版本號、路徑等。
+    -->
     <properties>
+        <!-- 指定 Java 版本 -->
+        <!-- Spring Boot 3.x 需要 Java 17 以上 -->
         <java.version>17</java.version>
     </properties>
 
+    <!--
+    ==========================================================================
+    依賴設定 (Dependencies)
+    ==========================================================================
+
+    定義專案需要的函式庫。
+
+    依賴範圍（scope）說明：
+    - compile（預設）: 編譯、測試、執行時都需要
+    - runtime: 只在執行時需要（如 JDBC 驅動）
+    - test: 只在測試時需要
+    - provided: 編譯時需要，但執行時由容器提供
+    - optional: 可選依賴，不會傳遞給依賴此專案的專案
+    -->
     <dependencies>
-        <!-- Spring Boot Starters -->
+
+        <!-- =================================================================
+             Spring Boot Starters
+             =================================================================
+             Starter 是 Spring Boot 的便利依賴，打包了相關的常用函式庫。
+             使用 Starter 不需要手動新增每個依賴，大幅簡化設定。
+        -->
+
+        <!--
+        spring-boot-starter-web: Web 應用程式開發
+        包含：
+        - Spring MVC（Web 框架）
+        - 內嵌 Tomcat（Web 伺服器）
+        - Jackson（JSON 處理）
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!--
+        spring-boot-starter-data-jpa: JPA 資料存取
+        包含：
+        - Spring Data JPA（Repository 抽象層）
+        - Hibernate（JPA 實作）
+        - HikariCP（連線池）
+        - Spring Transaction（交易管理）
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <!--
+        spring-boot-starter-validation: 資料驗證
+        包含：
+        - Hibernate Validator（Bean Validation 實作）
+        - 提供 @NotBlank, @Pattern 等驗證註解
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+        <!--
+        spring-boot-starter-cache: 快取支援
+        包含：
+        - Spring Cache 抽象層
+        - 提供 @Cacheable, @CacheEvict 等註解
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
-        <!-- Database -->
+        <!-- =================================================================
+             資料庫驅動 (Database Drivers)
+             =================================================================
+        -->
+
+        <!--
+        H2 Database: 輕量級記憶體資料庫
+        - 適合開發和測試
+        - 應用程式啟動時自動建立
+        - 應用程式關閉時資料消失
+        - scope=runtime: 只在執行時需要，編譯時不需要
+        -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!--
+        MySQL Connector: MySQL 資料庫驅動
+        - 生產環境使用 MySQL 時需要
+        - 目前未使用，但已準備好
+        -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -54,14 +200,39 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- =================================================================
+             開發工具 (Development Tools)
+             =================================================================
+        -->
+
+        <!--
+        Lombok: 減少樣板程式碼
+        - @Getter/@Setter: 自動產生 getter/setter
+        - @NoArgsConstructor: 自動產生無參數建構子
+        - @RequiredArgsConstructor: 自動產生依賴注入建構子
+        - @Slf4j: 自動產生 log 物件
+        - optional=true: 不會傳遞給依賴此專案的專案
+        -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Testing -->
+        <!-- =================================================================
+             測試依賴 (Testing Dependencies)
+             =================================================================
+        -->
+
+        <!--
+        spring-boot-starter-test: 測試支援
+        包含：
+        - JUnit 5（測試框架）
+        - Mockito（模擬框架）
+        - AssertJ（斷言函式庫）
+        - Spring Test（Spring 測試支援）
+        - scope=test: 只在測試時需要
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -69,13 +240,40 @@
         </dependency>
     </dependencies>
 
+    <!--
+    ==========================================================================
+    建構設定 (Build Configuration)
+    ==========================================================================
+
+    定義專案如何建構（編譯、打包等）。
+    -->
     <build>
         <plugins>
+            <!--
+            Spring Boot Maven Plugin
+
+            功能：
+            - mvn spring-boot:run: 執行 Spring Boot 應用程式
+            - mvn package: 打包成可執行的 JAR（包含所有依賴）
+
+            可執行 JAR（Fat JAR / Uber JAR）：
+            - 包含所有依賴的函式庫
+            - 可以直接用 java -jar app.jar 執行
+            - 方便部署，不需要安裝其他依賴
+            -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <excludes>
+                        <!--
+                        從最終 JAR 中排除 Lombok
+
+                        為什麼要排除？
+                        - Lombok 只在編譯時需要，產生 getter/setter 等
+                        - 編譯後的 bytecode 已經包含這些方法
+                        - 執行時不需要 Lombok，排除可減少 JAR 大小
+                        -->
                         <exclude>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
