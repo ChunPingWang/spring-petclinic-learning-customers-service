@@ -1,11 +1,19 @@
 package org.springframework.samples.petclinic.customers.web;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.samples.petclinic.customers.exception.ErrorResponse;
 import org.springframework.samples.petclinic.customers.model.Owner;
 import org.springframework.samples.petclinic.customers.model.Pet;
 import org.springframework.samples.petclinic.customers.service.OwnerService;
@@ -40,11 +48,18 @@ import java.util.stream.Collectors;
  * - PATCH: 部分更新資料
  * - DELETE: 刪除資料
  *
+ * OpenAPI 註解說明：
+ * - @Tag: 為 API 分組，相同 tag 的 API 會顯示在一起
+ * - @Operation: 描述單一 API 端點
+ * - @ApiResponses: 定義可能的回應狀態
+ * - @Parameter: 描述參數
+ *
  * @author Spring PetClinic
  */
 @RestController  // 標記為 REST 控制器，回傳值會自動轉為 JSON
 @RequestMapping("/api/owners")  // 所有端點的基礎路徑
 @RequiredArgsConstructor  // Lombok: 自動產生建構子注入
+@Tag(name = "飼主管理", description = "飼主（Owner）的 CRUD 操作 API")
 public class OwnerController {
 
     /**
@@ -65,8 +80,16 @@ public class OwnerController {
      * - required = false: 此參數是可選的
      * - 範例：GET /api/owners?lastName=王
      */
+    @Operation(
+        summary = "查詢飼主列表",
+        description = "取得所有飼主，或根據姓氏篩選"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "查詢成功")
+    })
     @GetMapping
     public ResponseEntity<List<OwnerDTO>> searchOwners(
+            @Parameter(description = "姓氏篩選條件（可選）", example = "王")
             @RequestParam(required = false) String lastName) {
 
         // 根據是否有姓氏參數，決定查詢方式
@@ -96,8 +119,17 @@ public class OwnerController {
      *                 - sort: 排序欄位和方向
      * @return 分頁結果
      */
+    @Operation(
+        summary = "分頁查詢飼主",
+        description = "支援分頁和排序的飼主查詢"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "查詢成功")
+    })
     @GetMapping("/page")
-    public Page<OwnerDTO> findAll(Pageable pageable) {
+    public Page<OwnerDTO> findAll(
+            @Parameter(description = "分頁參數（page, size, sort）")
+            Pageable pageable) {
         // Page.map(): 將分頁中的每個元素轉換為 DTO
         return ownerService.findAll(pageable)
             .map(OwnerMapper::toDTO);
@@ -116,8 +148,19 @@ public class OwnerController {
      * @PathVariable: 從 URL 路徑取得參數
      * - /api/owners/123 中的 123 會被綁定到 ownerId
      */
+    @Operation(
+        summary = "查詢單一飼主",
+        description = "根據飼主 ID 取得詳細資料"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "查詢成功"),
+        @ApiResponse(responseCode = "404", description = "找不到飼主",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{ownerId}")
-    public ResponseEntity<OwnerDTO> getOwner(@PathVariable Integer ownerId) {
+    public ResponseEntity<OwnerDTO> getOwner(
+            @Parameter(description = "飼主 ID", example = "1")
+            @PathVariable Integer ownerId) {
         Owner owner = ownerService.findById(ownerId);
         return ResponseEntity.ok(OwnerMapper.toDTO(owner));
     }
@@ -143,8 +186,20 @@ public class OwnerController {
      * @Valid: 觸發驗證，檢查 DTO 中的驗證註解（如 @NotBlank, @Pattern）
      * @RequestBody: 將請求的 JSON body 轉換為 Java 物件
      */
+    @Operation(
+        summary = "新增飼主",
+        description = "建立新的飼主資料"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "建立成功"),
+        @ApiResponse(responseCode = "400", description = "驗證失敗",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409", description = "電話號碼已被使用",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping
-    public ResponseEntity<OwnerDTO> createOwner(@Valid @RequestBody OwnerDTO dto) {
+    public ResponseEntity<OwnerDTO> createOwner(
+            @Valid @RequestBody OwnerDTO dto) {
         // 將 DTO 轉換為 Entity
         Owner owner = OwnerMapper.toEntity(dto);
 
@@ -167,8 +222,22 @@ public class OwnerController {
      * @param dto 新的飼主資料
      * @return 更新後的飼主
      */
+    @Operation(
+        summary = "更新飼主",
+        description = "更新現有飼主的資料"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "更新成功"),
+        @ApiResponse(responseCode = "400", description = "驗證失敗",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "找不到飼主",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409", description = "電話號碼已被使用",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PutMapping("/{ownerId}")
     public ResponseEntity<OwnerDTO> updateOwner(
+            @Parameter(description = "飼主 ID", example = "1")
             @PathVariable Integer ownerId,
             @Valid @RequestBody OwnerDTO dto) {
         Owner ownerDetails = OwnerMapper.toEntity(dto);
@@ -185,8 +254,19 @@ public class OwnerController {
      * @param ownerId 飼主 ID
      * @return HTTP 204 No Content（表示成功但無回傳內容）
      */
+    @Operation(
+        summary = "刪除飼主",
+        description = "刪除飼主及其所有寵物"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "刪除成功"),
+        @ApiResponse(responseCode = "404", description = "找不到飼主",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @DeleteMapping("/{ownerId}")
-    public ResponseEntity<Void> deleteOwner(@PathVariable Integer ownerId) {
+    public ResponseEntity<Void> deleteOwner(
+            @Parameter(description = "飼主 ID", example = "1")
+            @PathVariable Integer ownerId) {
         ownerService.delete(ownerId);
         // noContent(): 回傳 HTTP 204，表示成功刪除，無需回傳內容
         return ResponseEntity.noContent().build();
@@ -206,8 +286,20 @@ public class OwnerController {
      * @param dto 寵物資料
      * @return 新增的寵物
      */
+    @Operation(
+        summary = "新增寵物",
+        description = "為指定飼主新增一隻寵物"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "建立成功"),
+        @ApiResponse(responseCode = "400", description = "驗證失敗或業務規則錯誤",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "找不到飼主",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/{ownerId}/pets")
     public ResponseEntity<PetDTO> addPet(
+            @Parameter(description = "飼主 ID", example = "1")
             @PathVariable Integer ownerId,
             @Valid @RequestBody PetDTO dto) {
 

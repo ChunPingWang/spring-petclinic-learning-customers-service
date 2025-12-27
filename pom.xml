@@ -220,6 +220,28 @@ Maven 常用指令：
         </dependency>
 
         <!-- =================================================================
+             API 文件 (API Documentation)
+             =================================================================
+        -->
+
+        <!--
+        SpringDoc OpenAPI: Swagger/OpenAPI 3.0 文件產生器
+        - 自動掃描 @RestController 產生 API 文件
+        - 提供 Swagger UI 互動式介面
+        - 支援 OpenAPI 3.0 規範
+
+        存取路徑：
+        - Swagger UI: http://localhost:8081/swagger-ui.html
+        - OpenAPI JSON: http://localhost:8081/v3/api-docs
+        - OpenAPI YAML: http://localhost:8081/v3/api-docs.yaml
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- =================================================================
              測試依賴 (Testing Dependencies)
              =================================================================
         -->
