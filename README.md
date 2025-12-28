@@ -17,12 +17,13 @@
 1. [給完全新手的說明](#給完全新手的說明)
 2. [專案架構圖解](#專案架構圖解)
 3. [如何啟動專案](#如何啟動專案)
-4. [Swagger API 文件](#swagger-api-文件)
-5. [三層式架構詳解](#三層式架構詳解)
-6. [程式碼逐行解說](#程式碼逐行解說)
-7. [API 使用教學](#api-使用教學)
-8. [單元測試教學](#單元測試教學)
-9. [常見問題 FAQ](#常見問題-faq)
+4. [Docker 容器化部署](#docker-容器化部署)
+5. [Swagger API 文件](#swagger-api-文件)
+6. [三層式架構詳解](#三層式架構詳解)
+7. [程式碼逐行解說](#程式碼逐行解說)
+8. [API 使用教學](#api-使用教學)
+9. [單元測試教學](#單元測試教學)
+10. [常見問題 FAQ](#常見問題-faq)
 
 ---
 
@@ -98,6 +99,9 @@ spring-petclinic-customers-service/
 │
 ├── pom.xml                          ← 專案設定檔（像是食譜的材料清單）
 ├── mvnw / mvnw.cmd                  ← Maven Wrapper（不需安裝 Maven）
+├── Dockerfile                       ← Docker 映像建構設定
+├── docker-compose.yml               ← Docker Compose 設定
+├── .dockerignore                    ← Docker 忽略檔案清單
 │
 ├── src/main/java/.../customers/
 │   │
@@ -203,6 +207,119 @@ http://localhost:8081/swagger-ui.html
 3. 使用者名稱：`sa`
 4. 密碼：（留空）
 5. 點擊 Connect
+
+---
+
+## Docker 容器化部署
+
+### 什麼是 Docker？
+
+Docker 是一個容器化平台，可以將應用程式和其依賴打包成一個「容器」。
+
+**為什麼要用 Docker？**
+
+| 問題 | Docker 如何解決 |
+|------|----------------|
+| 「在我電腦可以跑啊」 | 容器確保所有環境都一樣 |
+| 部署太慢 | 容器啟動只需幾秒鐘 |
+| 服務互相影響 | 每個容器都是獨立的 |
+| 需要擴展 | 多開幾個容器就好 |
+
+### 前置需求
+
+安裝 Docker Desktop：
+- [Windows](https://docs.docker.com/desktop/install/windows-install/)
+- [Mac](https://docs.docker.com/desktop/install/mac-install/)
+- [Linux](https://docs.docker.com/engine/install/)
+
+確認安裝成功：
+```bash
+docker --version
+docker-compose --version
+```
+
+### 使用 Docker Compose（推薦）
+
+```bash
+# 建構並啟動容器（第一次會比較久）
+docker-compose up --build
+
+# 在背景執行
+docker-compose up -d --build
+
+# 查看日誌
+docker-compose logs -f
+
+# 停止容器
+docker-compose down
+```
+
+### 使用 Docker 指令
+
+```bash
+# 1. 建構映像
+docker build -t petclinic/customers-service:latest .
+
+# 2. 執行容器
+docker run -d \
+  --name petclinic-customers \
+  -p 8081:8081 \
+  petclinic/customers-service:latest
+
+# 3. 查看容器狀態
+docker ps
+
+# 4. 查看日誌
+docker logs -f petclinic-customers
+
+# 5. 停止容器
+docker stop petclinic-customers
+
+# 6. 刪除容器
+docker rm petclinic-customers
+```
+
+### 測試是否成功
+
+容器啟動後，打開瀏覽器：
+
+| 網址 | 說明 |
+|------|------|
+| http://localhost:8081/api/owners | API 端點 |
+| http://localhost:8081/swagger-ui.html | Swagger UI |
+| http://localhost:8081/actuator/health | 健康檢查 |
+
+### Dockerfile 說明
+
+本專案使用**多階段建構**（Multi-stage Build）：
+
+```
+┌─────────────────────────────────────┐
+│  第一階段：建構階段 (builder)         │
+│  - 使用 JDK 映像                     │
+│  - 下載依賴                          │
+│  - 編譯程式碼                        │
+│  - 打包成 JAR                        │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  第二階段：執行階段                   │
+│  - 使用較小的 JRE 映像               │
+│  - 只複製 JAR 檔案                   │
+│  - 最終映像較小（約 300MB）           │
+└─────────────────────────────────────┘
+```
+
+### 常用 Docker 指令
+
+| 指令 | 說明 |
+|------|------|
+| `docker images` | 列出所有映像 |
+| `docker ps` | 列出執行中的容器 |
+| `docker ps -a` | 列出所有容器 |
+| `docker logs <容器>` | 查看容器日誌 |
+| `docker exec -it <容器> sh` | 進入容器 |
+| `docker system prune` | 清理未使用的資源 |
 
 ---
 
@@ -1169,18 +1286,22 @@ List<String> names = pets.stream()
 | 資料驗證 | 使用 Bean Validation 驗證輸入 |
 | 例外處理 | 全域例外處理，統一錯誤回應格式 |
 | API 文件 | Swagger UI 互動式文件 |
+| 健康檢查 | Spring Boot Actuator 端點 |
 | 快取 | 使用 Spring Cache 快取查詢結果 |
 | 單元測試 | Repository、Service、Controller 測試 |
+| 容器化 | Docker / Docker Compose 支援 |
 
 ### 技術棧
 
 - Java 17
 - Spring Boot 3.2.0
 - Spring Data JPA
+- Spring Boot Actuator（健康檢查）
 - H2 Database（開發環境）
 - Lombok
 - SpringDoc OpenAPI（Swagger）
 - JUnit 5 + Mockito
+- Docker / Docker Compose
 
 ---
 

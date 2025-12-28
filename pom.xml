@@ -242,6 +242,23 @@ Maven 常用指令：
         </dependency>
 
         <!-- =================================================================
+             監控與健康檢查 (Monitoring & Health Check)
+             =================================================================
+        -->
+
+        <!--
+        spring-boot-starter-actuator: 應用程式監控
+        - 提供健康檢查端點 /actuator/health
+        - 提供應用程式資訊 /actuator/info
+        - 提供 metrics 指標 /actuator/metrics
+        - Docker 容器健康檢查需要此依賴
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- =================================================================
              測試依賴 (Testing Dependencies)
              =================================================================
         -->

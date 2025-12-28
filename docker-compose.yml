@@ -1,0 +1,84 @@
+# =============================================================================
+# Docker Compose 設定檔
+# =============================================================================
+#
+# 什麼是 Docker Compose？
+#
+# Docker Compose 是用來定義和運行多容器 Docker 應用程式的工具。
+# 你可以用一個 YAML 檔案來設定應用程式的服務，
+# 然後用一個指令就能建立並啟動所有服務。
+#
+# 常用指令：
+# - docker-compose up: 啟動所有服務
+# - docker-compose up -d: 在背景啟動
+# - docker-compose down: 停止並移除容器
+# - docker-compose logs: 查看日誌
+# - docker-compose ps: 查看容器狀態
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # 客戶服務 (Customers Service)
+  # ---------------------------------------------------------------------------
+  customers-service:
+    # 從當前目錄的 Dockerfile 建構映像
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # 容器名稱
+    container_name: petclinic-customers-service
+
+    # 映像名稱和標籤
+    image: petclinic/customers-service:latest
+
+    # 連接埠映射
+    # 格式：主機埠:容器埠
+    ports:
+      - "8081:8081"
+
+    # 環境變數
+    environment:
+      # Spring 設定檔（可選：dev, prod）
+      - SPRING_PROFILES_ACTIVE=default
+      # JVM 記憶體設定（容器環境建議明確設定）
+      - JAVA_OPTS=-Xms256m -Xmx512m
+
+    # 健康檢查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # 重新啟動策略
+    # - no: 不自動重啟
+    # - always: 總是重啟
+    # - on-failure: 只在失敗時重啟
+    # - unless-stopped: 除非手動停止，否則重啟
+    restart: unless-stopped
+
+    # 資源限制（可選）
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # 網路設定
+    networks:
+      - petclinic-network
+
+# -----------------------------------------------------------------------------
+# 網路設定
+# -----------------------------------------------------------------------------
+networks:
+  petclinic-network:
+    driver: bridge
