@@ -146,3 +146,127 @@ logging:
     # 顯示 SQL 參數綁定的值
     # TRACE 等級會顯示 ? 佔位符實際綁定的值
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# -----------------------------------------------------------------------------
+# Actuator 監控設定
+# -----------------------------------------------------------------------------
+# Spring Boot Actuator 提供生產級別的監控功能
+# 包括健康檢查、指標收集、環境資訊等
+#
+# 常用端點：
+# - /actuator/health: 健康檢查（Docker/K8s 使用）
+# - /actuator/info: 應用程式資訊
+# - /actuator/metrics: 效能指標
+# - /actuator/env: 環境變數（敏感，生產環境建議關閉）
+# - /actuator/loggers: 動態調整日誌等級
+# - /actuator/beans: 查看所有 Spring Bean
+#
+# 安全性注意事項：
+# 某些端點（如 env, beans）會暴露敏感資訊
+# 生產環境應該：
+# 1. 限制開放的端點
+# 2. 搭配 Spring Security 保護
+# 3. 使用不同的連接埠（management.server.port）
+# -----------------------------------------------------------------------------
+management:
+  # ---------------------------------------------------------------------------
+  # 端點設定
+  # ---------------------------------------------------------------------------
+  endpoints:
+    web:
+      exposure:
+        # 開放的端點清單
+        # 選項：
+        # - "*": 開放所有端點（不建議生產環境使用）
+        # - 個別列出: health,info,metrics（推薦）
+        #
+        # 常用端點說明：
+        # - health: 健康狀態檢查
+        # - info: 應用程式資訊
+        # - metrics: 效能指標（記憶體、CPU、請求數等）
+        # - loggers: 查看和修改日誌等級
+        # - caches: 快取資訊
+        # - scheduledtasks: 排程任務
+        # - mappings: 所有 @RequestMapping 路徑
+        include: health,info,metrics,loggers,caches,scheduledtasks,mappings
+
+      # 端點的基礎路徑（預設是 /actuator）
+      base-path: /actuator
+
+  # ---------------------------------------------------------------------------
+  # 健康檢查端點設定
+  # ---------------------------------------------------------------------------
+  endpoint:
+    health:
+      # 顯示詳細的健康資訊
+      # 選項：
+      # - never: 永遠不顯示詳細資訊
+      # - when_authorized: 授權使用者才能看到
+      # - always: 總是顯示（開發環境方便除錯）
+      show-details: always
+
+      # 顯示各個健康檢查元件
+      # 會顯示 db、diskSpace 等元件的狀態
+      show-components: always
+
+    # 資訊端點設定
+    info:
+      enabled: true
+
+    # 日誌端點設定（可動態修改日誌等級）
+    loggers:
+      enabled: true
+
+    # 指標端點設定
+    metrics:
+      enabled: true
+
+  # ---------------------------------------------------------------------------
+  # Info 端點貢獻者設定
+  # ---------------------------------------------------------------------------
+  info:
+    # 啟用環境變數資訊（讀取 info.* 設定）
+    env:
+      enabled: true
+    # 啟用 Java 資訊
+    java:
+      enabled: true
+    # 啟用作業系統資訊
+    os:
+      enabled: true
+
+  # ---------------------------------------------------------------------------
+  # 健康檢查指示器設定
+  # ---------------------------------------------------------------------------
+  health:
+    # 資料庫健康檢查
+    db:
+      enabled: true
+
+    # 磁碟空間健康檢查
+    diskspace:
+      enabled: true
+      # 磁碟空間低於此閾值時標記為 DOWN
+      threshold: 100MB
+
+# -----------------------------------------------------------------------------
+# 應用程式資訊（顯示在 /actuator/info）
+# -----------------------------------------------------------------------------
+info:
+  app:
+    name: ${spring.application.name}
+    description: Spring PetClinic 客戶服務 - 管理飼主與寵物資料
+    version: 1.0.0-SNAPSHOT
+    encoding: UTF-8
+    java:
+      version: ${java.version}
+
+  # 開發團隊資訊
+  team:
+    name: PetClinic Learning
+    contact: petclinic@example.com
+
+  # API 文件連結
+  documentation:
+    swagger-ui: http://localhost:8081/swagger-ui.html
+    openapi: http://localhost:8081/v3/api-docs
