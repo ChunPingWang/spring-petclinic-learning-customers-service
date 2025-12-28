@@ -19,11 +19,12 @@
 3. [如何啟動專案](#如何啟動專案)
 4. [Docker 容器化部署](#docker-容器化部署)
 5. [Swagger API 文件](#swagger-api-文件)
-6. [三層式架構詳解](#三層式架構詳解)
-7. [程式碼逐行解說](#程式碼逐行解說)
-8. [API 使用教學](#api-使用教學)
-9. [單元測試教學](#單元測試教學)
-10. [常見問題 FAQ](#常見問題-faq)
+6. [Actuator 監控端點](#actuator-監控端點)
+7. [三層式架構詳解](#三層式架構詳解)
+8. [程式碼逐行解說](#程式碼逐行解說)
+9. [API 使用教學](#api-使用教學)
+10. [單元測試教學](#單元測試教學)
+11. [常見問題 FAQ](#常見問題-faq)
 
 ---
 
@@ -385,6 +386,157 @@ public class OwnerController {
 | `@Operation` | 描述單一 API 端點 |
 | `@ApiResponses` | 定義可能的回應狀態碼 |
 | `@Parameter` | 描述參數 |
+
+---
+
+## Actuator 監控端點
+
+### 什麼是 Actuator？
+
+Spring Boot Actuator 是一個生產級別的監控工具，提供：
+1. **健康檢查**：讓 Docker/Kubernetes 知道服務是否正常運作
+2. **效能指標**：CPU、記憶體、請求數等監控數據
+3. **應用程式資訊**：版本、環境、設定等資訊
+4. **動態管理**：運行時調整日誌等級
+
+### 可用端點
+
+啟動服務後，可以存取以下端點：
+
+| 端點 | 網址 | 說明 |
+|------|------|------|
+| 端點列表 | http://localhost:8081/actuator | 查看所有可用端點 |
+| 健康檢查 | http://localhost:8081/actuator/health | 服務健康狀態 |
+| 應用程式資訊 | http://localhost:8081/actuator/info | 版本、Java、OS 資訊 |
+| 效能指標 | http://localhost:8081/actuator/metrics | 可用指標列表 |
+| 日誌管理 | http://localhost:8081/actuator/loggers | 查看/修改日誌等級 |
+| 快取資訊 | http://localhost:8081/actuator/caches | 快取狀態 |
+| 路由映射 | http://localhost:8081/actuator/mappings | 所有 API 路徑 |
+
+### 健康檢查詳解
+
+健康檢查端點會回傳服務的健康狀態：
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "db": {
+      "status": "UP",
+      "details": {
+        "database": "H2",
+        "validationQuery": "isValid()"
+      }
+    },
+    "diskSpace": {
+      "status": "UP",
+      "details": {
+        "total": 2047026917376,
+        "free": 1043796574208,
+        "threshold": 104857600
+      }
+    },
+    "ping": {
+      "status": "UP"
+    }
+  }
+}
+```
+
+**狀態說明：**
+
+| 狀態 | 意義 |
+|------|------|
+| `UP` | 服務正常運作 |
+| `DOWN` | 服務異常 |
+| `OUT_OF_SERVICE` | 服務暫停 |
+| `UNKNOWN` | 狀態未知 |
+
+### 應用程式資訊
+
+`/actuator/info` 端點顯示應用程式的詳細資訊：
+
+```json
+{
+  "app": {
+    "name": "customers-service",
+    "description": "Spring PetClinic 客戶服務",
+    "version": "1.0.0-SNAPSHOT"
+  },
+  "java": {
+    "version": "17.0.16",
+    "vendor": "Azul Systems, Inc."
+  },
+  "os": {
+    "name": "Windows 11",
+    "arch": "amd64"
+  }
+}
+```
+
+### 效能指標
+
+查看特定指標的詳細數據：
+
+```bash
+# JVM 記憶體使用量
+curl http://localhost:8081/actuator/metrics/jvm.memory.used
+
+# CPU 使用率
+curl http://localhost:8081/actuator/metrics/system.cpu.usage
+
+# HTTP 請求統計
+curl http://localhost:8081/actuator/metrics/http.server.requests
+```
+
+常用指標：
+
+| 指標 | 說明 |
+|------|------|
+| `jvm.memory.used` | JVM 記憶體使用量 |
+| `jvm.memory.max` | JVM 最大記憶體 |
+| `system.cpu.usage` | 系統 CPU 使用率 |
+| `process.cpu.usage` | 程序 CPU 使用率 |
+| `http.server.requests` | HTTP 請求統計 |
+| `hikaricp.connections.active` | 資料庫連線池活動連線數 |
+
+### 動態調整日誌等級
+
+可以在運行時調整日誌等級，無需重啟服務：
+
+```bash
+# 查看特定 Logger 的等級
+curl http://localhost:8081/actuator/loggers/org.springframework.samples.petclinic
+
+# 修改日誌等級為 DEBUG
+curl -X POST http://localhost:8081/actuator/loggers/org.springframework.samples.petclinic \
+  -H "Content-Type: application/json" \
+  -d '{"configuredLevel": "DEBUG"}'
+
+# 修改日誌等級為 INFO
+curl -X POST http://localhost:8081/actuator/loggers/org.springframework.samples.petclinic \
+  -H "Content-Type: application/json" \
+  -d '{"configuredLevel": "INFO"}'
+```
+
+### 安全性注意事項
+
+**生產環境建議：**
+
+1. **限制開放的端點**：只開放必要的端點（如 health, info）
+2. **使用 Spring Security**：保護敏感端點
+3. **分離管理端口**：使用不同的 port 存取 Actuator
+
+```yaml
+# 生產環境設定範例
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # 只開放必要端點
+  server:
+    port: 8082  # 使用不同的端口
+```
 
 ---
 
